@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: bines-media-app
+    env: node
+    region: frankfurt 
+    plan: free 
+    buildCommand: npm install && cd frontend && npm install && npm run build && cp -r dist ../backend && cd ../backend && npm install
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: VITE_ADMIN_PASSWORD
+        sync: false
+      - key: VITE_CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: VITE_CLOUDINARY_CLOUD_PRESET
+        sync: false
