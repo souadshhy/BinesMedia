@@ -2,9 +2,9 @@ services:
   - type: web
     name: bines-media-app
     env: node
-    region: frankfurt 
-    plan: free 
-    buildCommand: npm install && cd frontend && npm install && npm run build && cp -r dist ../backend && cd ../backend && npm install
+    region: frankfurt
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build && cp -r dist ../backend && cd ../backend && npm install
     startCommand: cd backend && node server.js
     envVars:
       - key: MONGODB_URI
