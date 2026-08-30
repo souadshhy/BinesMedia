@@ -125,7 +125,10 @@ const schema = {
       { key: "igTitle", label: "Instagram Label", type: "text" },
       { key: "igHandle", label: "Instagram Handle", type: "text" },
       { key: "igLink", label: "Instagram URL", type: "universal" },
-      { key: "infraText", label: "Footer Note", type: "textarea" },
+      { key: "infraText", label: "Footer Description", type: "textarea" },
+
+      // ✅ ADDED COPYRIGHT TEXT TO SCHEMA
+      { key: "copyrightText", label: "Copyright Text", type: "text" },
     ],
     "Form Details": [
       { key: "formName", label: "Name Label", type: "text" },
@@ -423,7 +426,7 @@ export default function AdminCMS() {
     formData.append("file", file);
     formData.append(
       "upload_preset",
-      import.meta.env.VITE_CLOUDINARY_CLOUD_PRESET,
+      import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
     );
     const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 
@@ -457,7 +460,7 @@ export default function AdminCMS() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch("/api/content", { 
+      const response = await fetch("/api/content", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(content),

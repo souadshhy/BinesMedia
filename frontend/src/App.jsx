@@ -13,6 +13,7 @@ import WhatsAppWidget from "./components/SocialWidgets";
 import { LanguageProvider } from "./context/LanguageContext";
 import AdminCMS from "./pages/Admin";
 import { ContentProvider } from "./context/ContentProvider";
+import Footer from "./components/Footer";
 
 function AppLayout() {
   const location = useLocation();
@@ -31,6 +32,7 @@ function AppLayout() {
         <Route path="/contact" element={<ContactForm />} />
         <Route path="/binesAdmin" element={<AdminCMS />} />
       </Routes>
+      {!isAdminPage && <Footer />}
     </>
   );
 }

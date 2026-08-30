@@ -26,16 +26,16 @@ export default function Navbar() {
       "relative px-2 py-1 font-label-md font-semibold transition-colors duration-300";
 
     const underline =
-      "after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-primary after:origin-center after:transition-transform after:duration-300";
+      "after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-[#0052b9] after:origin-center after:transition-transform after:duration-300";
 
     return isActive
-      ? `${baseClasses} ${underline} text-primary dark:text-inverse-primary after:scale-x-100`
-      : `${baseClasses} ${underline} text-secondary dark:text-secondary-fixed after:scale-x-0 hover:text-primary dark:hover:text-inverse-primary hover:after:scale-x-100 hover:bg-primary/5 dark:hover:bg-primary-fixed/10 rounded-t`;
+      ? `${baseClasses} ${underline} text-[#0052b9] after:scale-x-100`
+      : `${baseClasses} ${underline} text-[#546067] after:scale-x-0 hover:text-[#0052b9] hover:after:scale-x-100 hover:bg-[#0052b9]/5 rounded-t`;
   };
 
   return (
     <nav
-      className="fixed w-full top-0 left-0 z-50 bg-surface/80 backdrop-blur-md dark:bg-inverse-surface/70 shadow-sm transition-transform duration-300"
+      className="fixed w-full top-0 left-0 z-50 bg-[#FAF9F6]/80 backdrop-blur-md shadow-sm transition-transform duration-300"
       id="navbar"
     >
       <div className="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto">
@@ -82,18 +82,18 @@ export default function Navbar() {
           <Link
             to="/contact"
             onClick={handleNavClick}
-            className="hidden md:flex items-center justify-center bg-primary text-on-primary px-6 py-2 rounded-lg font-label-md text-label-md scale-95 active:scale-90 transition-transform hover:bg-surface-tint shadow-sm"
+            className="hidden md:flex items-center justify-center bg-[#0052b9] text-white px-6 py-2 rounded-lg font-label-md text-label-md scale-95 active:scale-90 transition-transform hover:bg-[#0052b9]/90 shadow-sm"
           >
             {t.contact}
           </Link>
 
-          <div className="flex bg-[#0052b9]/10 dark:bg-white/10 p-1 rounded-full items-center backdrop-blur-sm border border-[#0052b9]/20 dark:border-white/10">
+          <div className="flex bg-[#0052b9]/10 p-1 rounded-full items-center backdrop-blur-sm border border-[#0052b9]/20">
             <button
               onClick={language !== "tr" ? toggleLanguage : undefined}
               className={`px-3 py-1.5 rounded-full text-[12px] font-[700] tracking-wider transition-all duration-300 ${
                 language === "tr"
                   ? "bg-[#0052b9] text-white shadow-md cursor-default"
-                  : "text-[#546067] dark:text-[#bcc8d0] hover:text-[#0052b9] dark:hover:text-white cursor-pointer"
+                  : "text-[#546067] hover:text-[#0052b9] cursor-pointer"
               }`}
             >
               TR
@@ -103,7 +103,7 @@ export default function Navbar() {
               className={`px-3 py-1.5 rounded-full text-[12px] font-[700] tracking-wider transition-all duration-300 ${
                 language === "en"
                   ? "bg-[#0052b9] text-white shadow-md cursor-default"
-                  : "text-[#546067] dark:text-[#bcc8d0] hover:text-[#0052b9] dark:hover:text-white cursor-pointer"
+                  : "text-[#546067] hover:text-[#0052b9] cursor-pointer"
               }`}
             >
               EN
@@ -111,7 +111,7 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button className="md:hidden text-primary ml-2">
+          <button className="md:hidden text-[#0052b9] ml-2">
             <span className="material-symbols-outlined text-headline-md">
               menu
             </span>
