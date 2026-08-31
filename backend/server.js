@@ -8,15 +8,21 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 
-
-cloudinary.config({
-  url: process.env.CLOUDINARY_URL,
-});
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 
-
+// 1. CRITICAL: Configure Cloudinary with your environment variables
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+console.log("Cloud Name:", process.env.CLOUDINARY_CLOUD_NAME);
+console.log(
+  "API Key:",
+  process.env.CLOUDINARY_API_KEY ? "Loaded successfully" : "MISSING!",
+);
 
 // Configure Multer (Stores image in RAM temporarily before sending to Cloudinary)
 const storage = multer.memoryStorage();
@@ -35,7 +41,7 @@ mongoose
   })
   .catch((err) => console.error("MongoDB connection error:", err));
 
-// Mongoose Schemas
+// Mongoose Schemas & Models
 const contentSchema = new mongoose.Schema({
   data: { type: mongoose.Schema.Types.Mixed, required: true },
 });
@@ -97,56 +103,27 @@ app.post(
       if (!req.file)
         return res.status(400).json({ error: "No image provided" });
 
-      // Convert memory buffer to base64 so Cloudinary can read it
+      // Convert memory buffer to base64 data URI for Cloudinary
       const b64 = Buffer.from(req.file.buffer).toString("base64");
       const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
 
-      const result = await cloudinary.uploader.upload(dataURI, {
-        folder: "BinesMedia",
+      const result = await cloudinary.uploader.upload(dataURI,{
+        folder:"BinesMedia",
       });
 
       res.json({ secure_url: result.secure_url });
     } catch (error) {
-      console.error("Upload error:", error);
-      res.status(500).json({ error: "Image upload failed" });
+      console.error("========== CLOUDINARY ERROR ==========");
+      console.error(error.message);
+      console.log("======================================");
+
+      res.status(500).json({
+        error: "Image upload failed",
+        message: error.message,
+      });
     }
   },
 );
-
-app.post("/api/contact", async (req, res) => {
-  try {
-    const { name, email, message } = req.body;
-
-    const response = await fetch("https://api.web3forms.com/submit", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        access_key: process.env.WEB3FORMS_ACCESS_KEY,
-        name,
-        email,
-        message,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      res.json({ success: true });
-    } else {
-      res
-        .status(400)
-        .json({ success: false, error: "Web3Forms rejected submission" });
-    }
-  } catch (error) {
-    console.error("Contact route error:", error);
-    res
-      .status(500)
-      .json({ success: false, error: "Server failed to send email" });
-  }
-});
 
 app.get("/api/content", async (req, res) => {
   try {
@@ -177,12 +154,6 @@ app.post("/api/content", verifyToken, async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: "Failed to save content" });
   }
-});
-
-// Serve React Frontend
-app.use(express.static(path.join(__dirname, "dist")));
-app.get("/{*splat}", (req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
 const PORT = process.env.PORT || 5000;
