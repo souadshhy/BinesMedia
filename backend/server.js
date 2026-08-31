@@ -8,6 +8,10 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 
+
+cloudinary.config({
+  url: process.env.CLOUDINARY_URL,
+});
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
