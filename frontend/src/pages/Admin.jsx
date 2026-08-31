@@ -126,7 +126,6 @@ const schema = {
       { key: "igHandle", label: "Instagram Handle", type: "text" },
       { key: "igLink", label: "Instagram URL", type: "universal" },
       { key: "infraText", label: "Footer Description", type: "textarea" },
-
       { key: "copyrightText", label: "Copyright Text", type: "text" },
     ],
     "Form Details": [
@@ -198,15 +197,13 @@ export default function AdminCMS() {
   const [adminLang, setAdminLang] = useState("en");
   const ui = adminUI[adminLang];
 
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    localStorage.getItem("isAdminLoggedIn") === "true",
-  );
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
 
   const [passwordInput, setPasswordInput] = useState("");
   const [authError, setAuthError] = useState(false);
 
   const { content: dbContent, setContent: setGlobalContent } = useSiteContent();
-
   const [content, setContent] = useState(dbContent);
   const [activeSection, setActiveSection] = useState("home");
   const [isSaving, setIsSaving] = useState(false);
@@ -214,25 +211,47 @@ export default function AdminCMS() {
   const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
-    if (dbContent && !isDirty) {
-      setContent(dbContent);
-    }
+    if (dbContent && !isDirty) setContent(dbContent);
   }, [dbContent, isDirty]);
 
+  // JWT Backend Verification
   useEffect(() => {
-    const syncLogoutAcrossTabs = (event) => {
-      if (event.key === "isAdminLoggedIn") {
-        setIsAuthenticated(event.newValue === "true");
+    const verifyToken = async () => {
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        setIsVerifying(false);
+        return;
+      }
+      try {
+        const res = await fetch("/api/auth/verify", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          setIsAuthenticated(true);
+        } else {
+          localStorage.removeItem("adminToken");
+        }
+      } catch (err) {
+        localStorage.removeItem("adminToken");
+      } finally {
+        setIsVerifying(false);
       }
     };
-
-    window.addEventListener("storage", syncLogoutAcrossTabs);
-
-    return () => {
-      window.removeEventListener("storage", syncLogoutAcrossTabs);
-    };
+    verifyToken();
   }, []);
 
+  // Cross-tab synchronization
+  useEffect(() => {
+    const syncLogoutAcrossTabs = (event) => {
+      if (event.key === "adminToken") {
+        setIsAuthenticated(!!event.newValue);
+      }
+    };
+    window.addEventListener("storage", syncLogoutAcrossTabs);
+    return () => window.removeEventListener("storage", syncLogoutAcrossTabs);
+  }, []);
+
+  // ✅ RESTORED: The Sections Array!
   const sections = [
     {
       id: "nav",
@@ -261,20 +280,31 @@ export default function AdminCMS() {
     },
   ];
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (passwordInput === import.meta.env.VITE_ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      localStorage.setItem("isAdminLoggedIn", "true");
-      setAuthError(false);
-    } else {
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: passwordInput }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.token) {
+        localStorage.setItem("adminToken", data.token);
+        setIsAuthenticated(true);
+        setAuthError(false);
+      } else {
+        setAuthError(true);
+        setPasswordInput("");
+      }
+    } catch (err) {
       setAuthError(true);
-      setPasswordInput("");
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("isAdminLoggedIn");
+    localStorage.removeItem("adminToken");
     setIsAuthenticated(false);
     setPasswordInput("");
   };
@@ -448,21 +478,20 @@ export default function AdminCMS() {
     setUploadingImage(key + (index !== null ? index : ""));
 
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append(
-      "upload_preset",
-      import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
-    );
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    formData.append("image", file);
 
     try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        { method: "POST", body: formData },
-      );
+      const token = localStorage.getItem("adminToken");
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
       const data = await response.json();
 
-      if (data.error) throw new Error(data.error.message);
+      if (!response.ok) throw new Error(data.error || "Upload failed");
 
       const newImageUrl = data.secure_url;
       setIsDirty(true);
@@ -485,19 +514,27 @@ export default function AdminCMS() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const token = localStorage.getItem("adminToken");
       const response = await fetch("/api/content", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(content),
       });
 
-      if (!response.ok) throw new Error("Network response was not ok");
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          handleLogout();
+          throw new Error("Unauthorized");
+        }
+        throw new Error("Network response was not ok");
+      }
 
       const result = await response.json();
-
       setGlobalContent(result.data);
       setIsDirty(false);
-
       alert(
         adminLang === "en"
           ? "Content permanently saved to database!"
@@ -879,6 +916,8 @@ export default function AdminCMS() {
     ));
   };
 
+  if (isVerifying) return <div className="bg-[#191c1e] min-h-screen" />;
+
   if (!isAuthenticated) {
     return (
       <main className="min-h-screen bg-[#191c1e] flex flex-col items-center justify-center p-6 font-sans">
@@ -981,7 +1020,7 @@ export default function AdminCMS() {
               {isSaving ? ui.saving : ui.save}
             </button>
 
-            {/* ✅ ADDED: Logout Button */}
+            {/* Logout Button */}
             <button
               onClick={handleLogout}
               className="text-[#ffffff] bg-[#ba1a1a] hover:bg-[#93000a] px-6 py-3 rounded-lg text-[14px] font-[600] transition-colors shadow-sm flex items-center gap-2"

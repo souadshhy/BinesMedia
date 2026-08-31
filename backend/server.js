@@ -1,26 +1,124 @@
-require("dotenv").config();
+require("dotenv").config({ path: require("path").join(__dirname, "../.env") });
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Configure Multer (Stores image in RAM temporarily before sending to Cloudinary)
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
 // Connect to MongoDB
 mongoose
   .connect(process.env.MONGODB_URI)
-  .then(() => console.log("Connected to MongoDB"))
+  .then(async () => {
+    console.log("Connected to MongoDB");
+    const adminExists = await Admin.findOne({ username: "admin" });
+    if (!adminExists) {
+      const hashedPassword = await bcrypt.hash(
+        process.env.VITE_ADMIN_PASSWORD,
+        10,
+      );
+      await Admin.create({ username: "admin", password: hashedPassword });
+    }
+  })
   .catch((err) => console.error("MongoDB connection error:", err));
 
-// Mongoose Schema
+// Mongoose Schemas
 const contentSchema = new mongoose.Schema({
   data: { type: mongoose.Schema.Types.Mixed, required: true },
 });
 const Content = mongoose.model("Content", contentSchema);
 
-// API Routes
+const adminSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+});
+const Admin = mongoose.model("Admin", adminSchema);
+
+// JWT Verification Middleware
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(403).json({ error: "Access Denied" });
+
+  try {
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = verified;
+    next();
+  } catch (err) {
+    res.status(401).json({ error: "Invalid or expired token" });
+  }
+};
+
+// --- API Routes ---
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { password } = req.body;
+    const admin = await Admin.findOne({ username: "admin" });
+    if (!admin) return res.status(404).json({ error: "Admin not found" });
+
+    const validPassword = await bcrypt.compare(password, admin.password);
+    if (!validPassword)
+      return res.status(401).json({ error: "Invalid password" });
+
+    const token = jwt.sign(
+      { id: admin._id, role: "admin" },
+      process.env.JWT_SECRET,
+      { expiresIn: "12h" },
+    );
+    res.json({ token });
+  } catch (err) {
+    res.status(500).json({ error: "Server login error" });
+  }
+});
+
+// ✅ NEW: Route to verify token when the page loads (Prevents UI Spoofing)
+app.get("/api/auth/verify", verifyToken, (req, res) => {
+  res.status(200).json({ valid: true });
+});
+
+// ✅ NEW: Secure Image Upload Route
+app.post(
+  "/api/upload",
+  verifyToken,
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      if (!req.file)
+        return res.status(400).json({ error: "No image provided" });
+
+      // Convert memory buffer to base64 so Cloudinary can read it
+      const b64 = Buffer.from(req.file.buffer).toString("base64");
+      const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+
+      const result = await cloudinary.uploader.upload(dataURI, {
+        folder: "BinesMedia",
+      });
+
+      res.json({ secure_url: result.secure_url });
+    } catch (error) {
+      console.error("Upload error:", error);
+      res.status(500).json({ error: "Image upload failed" });
+    }
+  },
+);
+
 app.get("/api/content", async (req, res) => {
   try {
     const contentDoc = await Content.findOne();
@@ -32,7 +130,7 @@ app.get("/api/content", async (req, res) => {
   }
 });
 
-app.post("/api/content", async (req, res) => {
+app.post("/api/content", verifyToken, async (req, res) => {
   try {
     const newContent = req.body;
     let contentDoc = await Content.findOne();
@@ -52,10 +150,9 @@ app.post("/api/content", async (req, res) => {
   }
 });
 
-
+// Serve React Frontend
 app.use(express.static(path.join(__dirname, "dist")));
-
-app.get("/{*splat}", (req, res) => {
+app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
