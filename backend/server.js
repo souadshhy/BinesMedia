@@ -30,10 +30,7 @@ mongoose
     console.log("Connected to MongoDB");
     const adminExists = await Admin.findOne({ username: "admin" });
     if (!adminExists) {
-      const hashedPassword = await bcrypt.hash(
-        process.env.VITE_ADMIN_PASSWORD,
-        10,
-      );
+      const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
       await Admin.create({ username: "admin", password: hashedPassword });
     }
   })
@@ -88,12 +85,10 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-// ✅ NEW: Route to verify token when the page loads (Prevents UI Spoofing)
 app.get("/api/auth/verify", verifyToken, (req, res) => {
   res.status(200).json({ valid: true });
 });
 
-// ✅ NEW: Secure Image Upload Route
 app.post(
   "/api/upload",
   verifyToken,
@@ -118,6 +113,41 @@ app.post(
     }
   },
 );
+
+app.post("/api/contact", async (req, res) => {
+  try {
+    const { name, email, message } = req.body;
+
+    const response = await fetch("https://api.web3forms.com/submit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        access_key: process.env.WEB3FORMS_ACCESS_KEY,
+        name,
+        email,
+        message,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      res.json({ success: true });
+    } else {
+      res
+        .status(400)
+        .json({ success: false, error: "Web3Forms rejected submission" });
+    }
+  } catch (error) {
+    console.error("Contact route error:", error);
+    res
+      .status(500)
+      .json({ success: false, error: "Server failed to send email" });
+  }
+});
 
 app.get("/api/content", async (req, res) => {
   try {

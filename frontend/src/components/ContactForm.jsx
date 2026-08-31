@@ -1,24 +1,23 @@
 import { useState, useEffect } from "react";
-import { useLanguage } from "..//context/LanguageContext";
+import { useLanguage } from "../context/LanguageContext";
 import { useSiteContent } from "../context/ContentProvider";
-
 
 const formatWhatsAppNumber = (url) => {
   if (!url) return "";
-  const match = url.match(/\d+/); 
+  const match = url.match(/\d+/);
   if (!match) return url;
-  
+
   let num = match[0];
-  
+
   if (num.startsWith("90") && num.length === 12) {
     num = num.substring(2);
   }
-  
+
   if (num.length === 10) {
     return `+90 (${num.slice(0, 3)}) ${num.slice(3, 6)} ${num.slice(6, 8)} ${num.slice(8, 10)}`;
   }
-  
-  return "+" + match[0]; 
+
+  return "+" + match[0];
 };
 
 export default function ContactForm() {
@@ -61,15 +60,21 @@ export default function ContactForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus(t.msgSending);
+
     const formData = new FormData(e.target);
-    formData.append("access_key", import.meta.env.VITE_WEB3FORMS_ACCESS_KEY);
+    const formProps = Object.fromEntries(formData);
 
     try {
-      const response = await fetch("https://api.web3forms.com/submit", {
+      const response = await fetch("/api/contact", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formProps),
       });
+
       const data = await response.json();
+
       if (data.success) {
         setStatus(t.msgSuccess);
         e.target.reset();
