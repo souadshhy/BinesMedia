@@ -12,8 +12,7 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 
-// Configure Cloudinary
-const cloudinary = require("cloudinary").v2;
+
 
 // Configure Multer (Stores image in RAM temporarily before sending to Cloudinary)
 const storage = multer.memoryStorage();
