@@ -127,7 +127,6 @@ const schema = {
       { key: "igLink", label: "Instagram URL", type: "universal" },
       { key: "infraText", label: "Footer Description", type: "textarea" },
 
-      // ✅ ADDED COPYRIGHT TEXT TO SCHEMA
       { key: "copyrightText", label: "Copyright Text", type: "text" },
     ],
     "Form Details": [
@@ -169,6 +168,7 @@ const adminUI = {
     pwdPlaceholder: "Password",
     addItem: "Add New Item",
     confirmDelete: "Are you sure you want to permanently delete this item?",
+    logout: "Logout",
   },
   tr: {
     title: "İçerik Yöneticisi",
@@ -190,6 +190,7 @@ const adminUI = {
     pwdPlaceholder: "Şifre",
     addItem: "Yeni Öğe Ekle",
     confirmDelete: "Bu öğeyi kalıcı olarak silmek istediğinize emin misiniz?",
+    logout: "Çıkış",
   },
 };
 
@@ -197,7 +198,10 @@ export default function AdminCMS() {
   const [adminLang, setAdminLang] = useState("en");
   const ui = adminUI[adminLang];
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    localStorage.getItem("isAdminLoggedIn") === "true",
+  );
+
   const [passwordInput, setPasswordInput] = useState("");
   const [authError, setAuthError] = useState(false);
 
@@ -214,6 +218,20 @@ export default function AdminCMS() {
       setContent(dbContent);
     }
   }, [dbContent, isDirty]);
+
+  useEffect(() => {
+    const syncLogoutAcrossTabs = (event) => {
+      if (event.key === "isAdminLoggedIn") {
+        setIsAuthenticated(event.newValue === "true");
+      }
+    };
+
+    window.addEventListener("storage", syncLogoutAcrossTabs);
+
+    return () => {
+      window.removeEventListener("storage", syncLogoutAcrossTabs);
+    };
+  }, []);
 
   const sections = [
     {
@@ -247,11 +265,18 @@ export default function AdminCMS() {
     e.preventDefault();
     if (passwordInput === import.meta.env.VITE_ADMIN_PASSWORD) {
       setIsAuthenticated(true);
+      localStorage.setItem("isAdminLoggedIn", "true");
       setAuthError(false);
     } else {
       setAuthError(true);
       setPasswordInput("");
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("isAdminLoggedIn");
+    setIsAuthenticated(false);
+    setPasswordInput("");
   };
 
   const handleTextChange = (lang, section, key, value) => {
@@ -954,6 +979,17 @@ export default function AdminCMS() {
                 {isSaving ? "sync" : "save"}
               </span>
               {isSaving ? ui.saving : ui.save}
+            </button>
+
+            {/* ✅ ADDED: Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="text-[#ffffff] bg-[#ba1a1a] hover:bg-[#93000a] px-6 py-3 rounded-lg text-[14px] font-[600] transition-colors shadow-sm flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                logout
+              </span>
+              {ui.logout}
             </button>
           </div>
         </header>
