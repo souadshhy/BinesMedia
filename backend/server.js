@@ -9,23 +9,15 @@ const multer = require("multer");
 const { Readable } = require("stream");
 const cloudinary = require("cloudinary").v2;
 
-
-cloudinary.config({
-  url: process.env.CLOUDINARY_URL,
-});
-const app = express();
-app.use(cors());
-app.use(express.json({ limit: "50mb" }));
-
-<<<<<<< HEAD
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-=======
 
->>>>>>> parent of af54e5c (temp changes)
+const app = express();
+app.use(cors());
+app.use(express.json({ limit: "50mb" }));
 
 // Configure Multer (Stores image in RAM temporarily before sending to Cloudinary)
 const storage = multer.memoryStorage();
@@ -106,7 +98,6 @@ app.post(
       if (!req.file)
         return res.status(400).json({ error: "No image provided" });
 
-<<<<<<< HEAD
       const result = await new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
           (error, uploaded) => {
@@ -116,27 +107,14 @@ app.post(
         );
 
         Readable.from(req.file.buffer).pipe(uploadStream);
-=======
-      // Convert memory buffer to base64 so Cloudinary can read it
-      const b64 = Buffer.from(req.file.buffer).toString("base64");
-      const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
-
-      const result = await cloudinary.uploader.upload(dataURI, {
-        folder: "BinesMedia",
->>>>>>> parent of af54e5c (temp changes)
       });
 
       res.json({ secure_url: result.secure_url });
     } catch (error) {
-<<<<<<< HEAD
       res.status(500).json({
         error: "Image upload failed",
         message: error.message,
       });
-=======
-      console.error("Upload error:", error);
-      res.status(500).json({ error: "Image upload failed" });
->>>>>>> parent of af54e5c (temp changes)
     }
   },
 );
