@@ -15,6 +15,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
@@ -100,6 +101,9 @@ app.post(
 
       const result = await new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: "BinesMedia",
+          },
           (error, uploaded) => {
             if (error) return reject(error);
             resolve(uploaded);
@@ -110,7 +114,6 @@ app.post(
       });
 
       res.json({ secure_url: result.secure_url });
-      // ... inside /api/upload
     } catch (error) {
       console.error("FULL CLOUDINARY ERROR:", JSON.stringify(error, null, 2));
       console.error("RAW ERROR OBJECT:", error);
@@ -124,40 +127,6 @@ app.post(
   },
 );
 
-app.post("/api/contact", async (req, res) => {
-  try {
-    const { name, email, message } = req.body;
-
-    const response = await fetch("https://api.web3forms.com/submit", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        access_key: process.env.WEB3FORMS_ACCESS_KEY,
-        name,
-        email,
-        message,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      res.json({ success: true });
-    } else {
-      res
-        .status(400)
-        .json({ success: false, error: "Web3Forms rejected submission" });
-    }
-  } catch (error) {
-    console.error("Contact route error:", error);
-    res
-      .status(500)
-      .json({ success: false, error: "Server failed to send email" });
-  }
-});
 
 app.get("/api/content", async (req, res) => {
   try {

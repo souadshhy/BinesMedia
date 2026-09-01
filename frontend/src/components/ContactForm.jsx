@@ -22,11 +22,8 @@ const formatWhatsAppNumber = (url) => {
 
 export default function ContactForm() {
   const { language } = useLanguage();
-  const { content, isLoading } = useSiteContent();
-  if (isLoading) return <div className="min-h-screen bg-black" />;
-  const t = content[language].contact;
-
   const [status, setStatus] = useState("");
+  const { content, isLoading } = useSiteContent();
 
   useEffect(() => {
     const observerOptions = {
@@ -57,20 +54,25 @@ export default function ContactForm() {
     return () => observer.disconnect();
   }, [language]);
 
+  if (isLoading || !content) return <div className="min-h-screen bg-black" />;
+
+  const t = content[language].contact;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus(t.msgSending);
 
+    // Extract form data directly from the event target
     const formData = new FormData(e.target);
-    const formProps = Object.fromEntries(formData);
+
+    // Inject your Web3Forms access key directly into the payload
+    formData.append("access_key", "12158830-1db7-4c9c-810b-30b8830c2bb9");
 
     try {
-      const response = await fetch("/api/contact", {
+      // Send directly to Web3Forms API, bypassing your Node backend
+      const response = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formProps),
+        body: formData,
       });
 
       const data = await response.json();
@@ -188,6 +190,14 @@ export default function ContactForm() {
 
           <div className="lg:col-span-7 p-10 md:p-16 bg-[#ffffff]">
             <form onSubmit={handleSubmit} className="flex flex-col gap-10">
+              {/* Web3Forms Honeypot for spam prevention */}
+              <input
+                type="checkbox"
+                name="botcheck"
+                className="hidden"
+                style={{ display: "none" }}
+              />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div className="relative">
                   <label className="block text-[12px] font-[600] uppercase tracking-widest text-[#546067] mb-3">
