@@ -110,10 +110,15 @@ app.post(
       });
 
       res.json({ secure_url: result.secure_url });
+      // ... inside /api/upload
     } catch (error) {
+      console.error("FULL CLOUDINARY ERROR:", JSON.stringify(error, null, 2));
+      console.error("RAW ERROR OBJECT:", error);
+
       res.status(500).json({
         error: "Image upload failed",
         message: error.message,
+        cloudinary_details: error,
       });
     }
   },
