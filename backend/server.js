@@ -29,14 +29,20 @@ mongoose
   .connect(process.env.MONGODB_URI)
   .then(async () => {
     console.log("Connected to MongoDB");
-    const adminExists = await Admin.findOne({ username: "admin" });
-    if (!adminExists) {
-      const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
-      await Admin.create({ username: "admin", password: hashedPassword });
-    }
+
+    // Always hash the current password from .env
+    const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
+
+    // Update the admin if it exists, or create it if it doesn't
+    await Admin.findOneAndUpdate(
+      { username: "admin" },
+      { password: hashedPassword },
+      { upsert: true },
+    );
+
+    console.log("Admin credentials synced with .env");
   })
   .catch((err) => console.error("MongoDB connection error:", err));
-
 // Mongoose Schemas
 const contentSchema = new mongoose.Schema({
   data: { type: mongoose.Schema.Types.Mixed, required: true },
