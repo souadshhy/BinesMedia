@@ -6,27 +6,22 @@ const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
+const { Readable } = require("stream");
 const cloudinary = require("cloudinary").v2;
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 
-// 1. CRITICAL: Configure Cloudinary with your environment variables
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-console.log("Cloud Name:", process.env.CLOUDINARY_CLOUD_NAME);
-console.log(
-  "API Key:",
-  process.env.CLOUDINARY_API_KEY ? "Loaded successfully" : "MISSING!",
-);
 
 // Configure Multer (Stores image in RAM temporarily before sending to Cloudinary)
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
 // Connect to MongoDB
 mongoose
@@ -103,20 +98,19 @@ app.post(
       if (!req.file)
         return res.status(400).json({ error: "No image provided" });
 
-      // Convert memory buffer to base64 data URI for Cloudinary
-      const b64 = Buffer.from(req.file.buffer).toString("base64");
-      const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          (error, uploaded) => {
+            if (error) return reject(error);
+            resolve(uploaded);
+          },
+        );
 
-      const result = await cloudinary.uploader.upload(dataURI,{
-        folder:"BinesMedia",
+        Readable.from(req.file.buffer).pipe(uploadStream);
       });
 
       res.json({ secure_url: result.secure_url });
     } catch (error) {
-      console.error("========== CLOUDINARY ERROR ==========");
-      console.error(error.message);
-      console.log("======================================");
-
       res.status(500).json({
         error: "Image upload failed",
         message: error.message,
