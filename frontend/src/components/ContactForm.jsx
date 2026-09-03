@@ -48,7 +48,7 @@ export default function ContactForm() {
     const formData = new FormData(e.target);
 
     // Inject your Web3Forms access key directly into the payload
-    formData.append("access_key", import.meta.env.WEB3FORMS_ACCESS_KEY);
+    formData.append("access_key", import.meta.env.VITE_WEB3FORMS_ACCESS_KEY);
 
     try {
       // Send directly to Web3Forms API, bypassing your Node backend
