@@ -2,24 +2,6 @@ import { useState, useEffect } from "react";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteContent } from "../context/ContentProvider";
 
-const formatWhatsAppNumber = (url) => {
-  if (!url) return "";
-  const match = url.match(/\d+/);
-  if (!match) return url;
-
-  let num = match[0];
-
-  if (num.startsWith("90") && num.length === 12) {
-    num = num.substring(2);
-  }
-
-  if (num.length === 10) {
-    return `+90 (${num.slice(0, 3)}) ${num.slice(3, 6)} ${num.slice(6, 8)} ${num.slice(8, 10)}`;
-  }
-
-  return "+" + match[0];
-};
-
 export default function ContactForm() {
   const { language } = useLanguage();
   const [status, setStatus] = useState("");
@@ -66,7 +48,7 @@ export default function ContactForm() {
     const formData = new FormData(e.target);
 
     // Inject your Web3Forms access key directly into the payload
-    formData.append("access_key", "12158830-1db7-4c9c-810b-30b8830c2bb9");
+    formData.append("access_key", import.meta.env.WEB3FORMS_ACCESS_KEY);
 
     try {
       // Send directly to Web3Forms API, bypassing your Node backend
@@ -139,22 +121,17 @@ export default function ContactForm() {
               </div>
 
               <div className="flex items-start gap-6 mb-8 group">
-                <div className="w-12 h-12 bg-[#ffffff] flex items-center justify-center rounded-[16px] shadow-sm text-[#0052b9] group-hover:bg-[#25D366] group-hover:text-[#ffffff] transition-colors duration-300 shrink-0">
+                <div className="w-12 h-12 bg-[#ffffff] flex items-center justify-center rounded-[16px] shadow-sm text-[#0052b9] group-hover:bg-[#ea4335] group-hover:text-[#ffffff] transition-colors duration-300 shrink-0">
                   <span className="material-symbols-outlined text-3xl">
-                    forum
+                    mail
                   </span>
                 </div>
-                <a
-                  href={content.en.contact.waLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                >
+                <a href="mailto:InfoBinesMedia.net@gmail.com" className="block">
                   <p className="text-[12px] font-[600] text-[#546067] uppercase tracking-widest mb-1">
-                    {t.waTitle}
+                    Email
                   </p>
-                  <p className="text-[16px] text-[#191c1e] font-[500] leading-relaxed hover:text-[#25D366] transition-colors cursor-pointer">
-                    {formatWhatsAppNumber(content.en.contact.waLink)}
+                  <p className="text-[16px] text-[#191c1e] font-[500] leading-relaxed hover:text-[#ea4335] transition-colors cursor-pointer">
+                    InfoBinesMedia.net@gmail.com
                   </p>
                 </a>
               </div>

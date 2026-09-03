@@ -9,7 +9,6 @@ export default function Navbar() {
   const { language, toggleLanguage } = useLanguage();
   const { content, isLoading } = useSiteContent();
 
-  // ✅ ADDED: State to control the mobile sidebar
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   if (isLoading) return null;
@@ -17,7 +16,6 @@ export default function Navbar() {
   const t = content[language].nav;
 
   const handleNavClick = () => {
-    // ✅ ADDED: Close the mobile menu when a link is clicked
     setIsMobileMenuOpen(false);
 
     setTimeout(() => {
@@ -74,21 +72,19 @@ export default function Navbar() {
             >
               {t.home}
             </NavLink>
-
-            <NavLink
-              to="/services"
-              onClick={handleNavClick}
-              className={navLinkClass}
-            >
-              {t.services}
-            </NavLink>
-
             <NavLink
               to="/company"
               onClick={handleNavClick}
               className={navLinkClass}
             >
               {t.company}
+            </NavLink>
+            <NavLink
+              to="/services"
+              onClick={handleNavClick}
+              className={navLinkClass}
+            >
+              {t.services}
             </NavLink>
           </div>
 
@@ -126,7 +122,7 @@ export default function Navbar() {
               </button>
             </div>
 
-            {/* ✅ ADDED: Mobile Menu Open Button */}
+            {/* Mobile Menu Open Button */}
             <button
               onClick={() => setIsMobileMenuOpen(true)}
               className="md:hidden text-[#0052b9] ml-2 active:scale-90 transition-transform"
@@ -139,7 +135,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* ✅ ADDED: Mobile Sidebar Overlay (Dark background) */}
+      {/* Mobile Sidebar Overlay (Dark background) */}
       <div
         className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-opacity duration-300 md:hidden ${
           isMobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
@@ -147,7 +143,7 @@ export default function Navbar() {
         onClick={() => setIsMobileMenuOpen(false)} // Clicking outside closes it
       ></div>
 
-      {/* ✅ ADDED: Mobile Right Sidebar Drawer */}
+      {/* Mobile Right Sidebar Drawer */}
       <div
         className={`fixed top-0 right-0 h-full w-[250px] bg-[#FAF9F6] shadow-2xl z-50 transform transition-transform duration-300 ease-out flex flex-col md:hidden ${
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
@@ -172,19 +168,19 @@ export default function Navbar() {
           </NavLink>
 
           <NavLink
-            to="/services"
-            onClick={handleNavClick}
-            className={navLinkClass}
-          >
-            {t.services}
-          </NavLink>
-
-          <NavLink
             to="/company"
             onClick={handleNavClick}
             className={navLinkClass}
           >
             {t.company}
+          </NavLink>
+
+          <NavLink
+            to="/services"
+            onClick={handleNavClick}
+            className={navLinkClass}
+          >
+            {t.services}
           </NavLink>
 
           {/* Sidebar Contact Button */}

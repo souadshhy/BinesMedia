@@ -1,4 +1,10 @@
-import { createContext, useState, useEffect, useContext, useCallback } from "react";
+import {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+} from "react";
 import exterior1 from "../assets/exterior_1.jpg";
 import resExample1 from "../assets/ozelExample1.jpg";
 import resExample1png from "../assets/resExample1.png";
@@ -8,9 +14,30 @@ import bannerImg from "../assets/ozelExample2.jpg";
 import screen2 from "../assets/screen2.png";
 import screen3 from "../assets/screen3.png";
 
-
-
 const ContentContext = createContext();
+
+// Helper function to deeply merge DB data over local fallback data
+const mergeDeep = (target, source) => {
+  // Check if item is a pure object (and NOT an array, because we want DB arrays to fully overwrite local arrays)
+  const isObject = (obj) =>
+    obj && typeof obj === "object" && !Array.isArray(obj);
+
+  if (!isObject(target) || !isObject(source)) return source;
+
+  const output = { ...target };
+  Object.keys(source).forEach((key) => {
+    if (isObject(source[key])) {
+      if (!(key in target)) {
+        Object.assign(output, { [key]: source[key] });
+      } else {
+        output[key] = mergeDeep(target[key], source[key]);
+      }
+    } else {
+      Object.assign(output, { [key]: source[key] });
+    }
+  });
+  return output;
+};
 
 export function ContentProvider({ children }) {
   const [content, setContent] = useState(siteContent);
@@ -26,7 +53,10 @@ export function ContentProvider({ children }) {
       })
       .then((data) => {
         if (data && data.en && data.tr) {
-          setContent(data);
+          // MERGE DB data over the local siteContent fallback
+          // This ensures new keys in code (like emailAddress) exist even if the DB is older
+          const mergedContent = mergeDeep(siteContent, data);
+          setContent(mergedContent);
         }
       })
       .catch((err) => console.log("Using local content. DB fetch failed:", err))
@@ -72,7 +102,6 @@ export const siteContent = {
       infraDesc:
         "Comprehensive OOH digital solutions engineered for maximum impact and measurable results in high-dwell-time environments.",
 
-      // Converted to Array for Add/Hide/Delete support
       features: [
         {
           num: "01",
@@ -107,9 +136,8 @@ export const siteContent = {
       guarantee: "Performance Guarantee",
       attention1: "100%",
       attention2: "Attention.",
-      hqLocation: "HQ Location",
+      hqLocation: "Building Location", // Changed from HQ Location
 
-      // Converted to Array
       guarantees: [
         {
           title: "Zero ad-skipping",
@@ -171,11 +199,10 @@ export const siteContent = {
         "Engineering precision digital infrastructure for the modern urban landscape. We deploy high-impact OOH networks where captive audiences reside.",
       keyInstTitle: "Key Installations",
 
-      // Converted to Array
       projects: [
         {
-          title: "Özel Döner Complex",
-          desc: "Strategic deployment of digital displays in high-visibility commercial hubs, maximizing brand reach during peak retail hours.",
+          title: "Bines Media Complex",
+          desc: "Strategic deployment of premium digital displays within our flagship corporate hub, showcasing high-impact media capabilities in a professional environment.",
           img: resExample1,
           isHidden: false,
         },
@@ -197,7 +224,7 @@ export const siteContent = {
       heroDesc:
         "Ready to deploy high-impact digital campaigns? Connect with our infrastructure team to secure premium media inventory across the network.",
       commandCenter: "Command Center",
-      hqTitle: "Headquarters",
+      hqTitle: "Bines Media Building",
       hqL1: "Pancarlı, İbrahimli Yolu Cd.",
       hqL2: "Şehitkamil/Gaziantep",
 
@@ -205,8 +232,8 @@ export const siteContent = {
       mapEmbedUrl:
         "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3183.368362386634!2d37.34275437531601!3d37.072532652301774!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x84b1ad2342c27a1d%3A0xb6256b1b73f02c6d!2sBines%20Media!5e0!3m2!1sen!2str!4v1788018878350!5m2!1sen!2str",
 
-      waTitle: "WhatsApp",
-      waLink: "https://wa.me/905321520056",
+      emailTitle: "Email",
+      emailAddress: "InfoBinesMedia.net@gmail.com",
 
       igTitle: "Instagram",
       igHandle: "See us up close",
@@ -284,7 +311,7 @@ export const siteContent = {
       guarantee: "Performans Garantisi",
       attention1: "%100",
       attention2: "Dikkat.",
-      hqLocation: "Merkez Konumu",
+      hqLocation: "Bina Konumu", // Changed from Merkez Konumu
 
       guarantees: [
         {
@@ -348,8 +375,8 @@ export const siteContent = {
       keyInstTitle: "Ana Kurulumlar",
       projects: [
         {
-          title: "Özel Döner Kompleksi",
-          desc: "Yoğun perakende saatlerinde marka erişimini en üst düzeye çıkarmak için yüksek görünürlüğe sahip ticari merkezlerde büyük formatlı dijital ekranların stratejik kurulumu.",
+          title: "Bines Media Kompleksi",
+          desc: "Profesyonel bir ortamda yüksek etkili medya yeteneklerini sergileyen, amiral gemisi kurumsal merkezimizde premium dijital ekranların stratejik kurulumu.",
           img: resExample1,
           isHidden: false,
         },
@@ -370,7 +397,7 @@ export const siteContent = {
       heroDesc:
         "Yüksek etkili dijital kampanyalar başlatmaya hazır mısınız? Ağımızdaki premium medya envanterini güvence altına almak için altyapı ekibimizle bağlantı kurun.",
       commandCenter: "Komuta Merkezi",
-      hqTitle: "Merkez",
+      hqTitle: "Bines Media Binası",
       hqL1: "Pancarlı, İbrahimli Yolu Cd.",
       hqL2: "Şehitkamil/Gaziantep",
 
@@ -378,8 +405,8 @@ export const siteContent = {
       mapEmbedUrl:
         "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3183.368362386634!2d37.34275437531601!3d37.072532652301774!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x84b1ad2342c27a1d%3A0xb6256b1b73f02c6d!2sBines%20Media!5e0!3m2!1sen!2str!4v1788018878350!5m2!1sen!2str",
 
-      waTitle: "WhatsApp",
-      waLink: "https://wa.me/905300000000",
+      emailTitle: "E-posta",
+      emailAddress: "InfoBinesMedia.net@gmail.com",
 
       igTitle: "Instagram",
       igHandle: "Bizi yakından görün",

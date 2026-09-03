@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSiteContent } from "../context/ContentProvider";
 
 const schema = {
   nav: {
     "Navigation Links": [
       { key: "home", label: "Home Link", type: "text" },
-      { key: "services", label: "Services Link", type: "text" },
       { key: "company", label: "Company Link", type: "text" },
+      { key: "services", label: "Services Link", type: "text" },
       { key: "contact", label: "Contact Us Link", type: "text" },
     ],
   },
@@ -116,17 +116,16 @@ const schema = {
         label: "Google Maps Iframe URL",
         type: "universal",
       },
-      { key: "waTitle", label: "WhatsApp Label", type: "text" },
+      { key: "emailTitle", label: "Email Label", type: "text" },
       {
-        key: "waLink",
-        label: "WhatsApp Link (e.g. https://wa.me/...)",
+        key: "emailAddress",
+        label: "Email Address",
         type: "universal",
       },
       { key: "igTitle", label: "Instagram Label", type: "text" },
       { key: "igHandle", label: "Instagram Handle", type: "text" },
       { key: "igLink", label: "Instagram URL", type: "universal" },
       { key: "infraText", label: "Footer Description", type: "textarea" },
-      { key: "copyrightText", label: "Copyright Text", type: "text" },
     ],
     "Form Details": [
       { key: "formName", label: "Name Label", type: "text" },
@@ -168,6 +167,9 @@ const adminUI = {
     addItem: "Add New Item",
     confirmDelete: "Are you sure you want to permanently delete this item?",
     logout: "Logout",
+    schemaNoticeTitle: "Codebase Update Detected",
+    schemaNoticeDesc:
+      "New fields or structures were found in the local code that aren't in your database yet. They have been loaded automatically. Please review the content and click 'Save to Database' to push these changes live.",
   },
   tr: {
     title: "İçerik Yöneticisi",
@@ -190,6 +192,9 @@ const adminUI = {
     addItem: "Yeni Öğe Ekle",
     confirmDelete: "Bu öğeyi kalıcı olarak silmek istediğinize emin misiniz?",
     logout: "Çıkış",
+    schemaNoticeTitle: "Kod Güncellemesi Algılandı",
+    schemaNoticeDesc:
+      "Yerel kodda henüz veritabanınızda olmayan yeni alanlar veya yapılar bulundu ve otomatik olarak yüklendi. Lütfen içeriği inceleyin ve bu değişiklikleri canlıya almak için 'Veritabanına Kaydet'e tıklayın.",
   },
 };
 
@@ -209,6 +214,10 @@ export default function AdminCMS() {
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
+
+  // NEW: State for detecting schema changes
+  const [schemaUpdateDetected, setSchemaUpdateDetected] = useState(false);
+  const hasCheckedSchema = useRef(false);
 
   useEffect(() => {
     if (dbContent && !isDirty) setContent(dbContent);
@@ -240,6 +249,42 @@ export default function AdminCMS() {
     verifyToken();
   }, []);
 
+  // NEW: Check if raw DB data differs from merged context data (Schema Evolution Check)
+  useEffect(() => {
+    if (isAuthenticated && dbContent && !hasCheckedSchema.current) {
+      hasCheckedSchema.current = true; // Ensure we only check once per session
+
+      const checkSchemaSync = async () => {
+        try {
+          const res = await fetch("/api/content", { cache: "no-store" });
+          if (!res.ok) return;
+          const rawData = await res.json();
+
+          if (rawData && rawData.en && rawData.tr) {
+            // Compare cleanly by stripping out any DB metadata (like _id)
+            const rawString = JSON.stringify({
+              en: rawData.en,
+              tr: rawData.tr,
+            });
+            const mergedString = JSON.stringify({
+              en: dbContent.en,
+              tr: dbContent.tr,
+            });
+
+            if (rawString !== mergedString) {
+              setSchemaUpdateDetected(true);
+              setIsDirty(true); // Pre-flag as dirty so the Save button is active immediately
+            }
+          }
+        } catch (error) {
+          console.error("Schema check failed:", error);
+        }
+      };
+
+      checkSchemaSync();
+    }
+  }, [isAuthenticated, dbContent]);
+
   // Cross-tab synchronization
   useEffect(() => {
     const syncLogoutAcrossTabs = (event) => {
@@ -251,7 +296,6 @@ export default function AdminCMS() {
     return () => window.removeEventListener("storage", syncLogoutAcrossTabs);
   }, []);
 
-  // ✅ RESTORED: The Sections Array!
   const sections = [
     {
       id: "nav",
@@ -307,6 +351,7 @@ export default function AdminCMS() {
     localStorage.removeItem("adminToken");
     setIsAuthenticated(false);
     setPasswordInput("");
+    hasCheckedSchema.current = false; // Reset schema check on logout
   };
 
   const handleTextChange = (lang, section, key, value) => {
@@ -532,9 +577,16 @@ export default function AdminCMS() {
         throw new Error("Network response was not ok");
       }
 
+      // If wrapped in { data: ... }, extract it appropriately based on your API
       const result = await response.json();
-      setGlobalContent(result.data);
+      const updatedData = result.data || result;
+
+      setGlobalContent(updatedData);
       setIsDirty(false);
+
+      // NEW: Dismiss the notice banner because DB is now fully synced with code
+      setSchemaUpdateDetected(false);
+
       alert(
         adminLang === "en"
           ? "Content permanently saved to database!"
@@ -1032,6 +1084,25 @@ export default function AdminCMS() {
             </button>
           </div>
         </header>
+
+        {/*SCHEMA UPDATE NOTIFICATION */}
+        {schemaUpdateDetected && (
+          <div className="max-w-[1440px] mx-auto w-full mb-8 animate-fade-in-up">
+            <div className="bg-[#0052b9]/10 border border-[#0052b9]/30 rounded-xl p-4 flex items-start gap-4 shadow-sm">
+              <span className="material-symbols-outlined text-[#0052b9] text-[24px]">
+                info
+              </span>
+              <div>
+                <h4 className="text-[#0052b9] font-[700] text-[16px] mb-1">
+                  {ui.schemaNoticeTitle}
+                </h4>
+                <p className="text-[#0052b9]/80 text-[14px] font-[500]">
+                  {ui.schemaNoticeDesc}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* MAIN LAYOUT GRID */}
         <div className="max-w-[1440px] mx-auto w-full grid grid-cols-12 gap-8 pb-12">

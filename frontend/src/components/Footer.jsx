@@ -11,7 +11,7 @@ export default function Footer() {
   if (isLoading || !content) return null;
 
   const tNav = content[language].nav;
-  const tContact = content.en.contact;
+  const tContact = content[language].contact;
 
   const handleScrollTop = () => {
     setTimeout(() => {
@@ -95,16 +95,6 @@ export default function Footer() {
               <br />
               {tContact.hqL2}
             </p>
-            {tContact.waLink && (
-              <a
-                href={tContact.waLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#0052b9] hover:underline text-body-md mt-1 inline-block font-semibold"
-              >
-                WhatsApp Support
-              </a>
-            )}
           </div>
         </div>
 
