@@ -5,8 +5,8 @@ const schema = {
   nav: {
     "Navigation Links": [
       { key: "home", label: "Home Link", type: "text" },
-      { key: "company", label: "Company Link", type: "text" },
-      { key: "services", label: "Services Link", type: "text" },
+      { key: "company", label: "About Us Link", type: "text" },
+      { key: "services", label: "Our Services Link", type: "text" },
       { key: "contact", label: "Contact Us Link", type: "text" },
     ],
   },
@@ -216,9 +216,6 @@ export default function AdminCMS() {
   const [uploadingImage, setUploadingImage] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
 
-  const [schemaUpdateDetected, setSchemaUpdateDetected] = useState(false);
-  const hasCheckedSchema = useRef(false);
-
   useEffect(() => {
     if (dbContent && !isDirty) {
       setContent(dbContent);
@@ -263,40 +260,6 @@ export default function AdminCMS() {
     verifyToken();
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated && dbContent && !hasCheckedSchema.current) {
-      hasCheckedSchema.current = true;
-
-      const checkSchemaSync = async () => {
-        try {
-          const res = await fetch("/api/content", { cache: "no-store" });
-          if (!res.ok) return;
-          const rawData = await res.json();
-
-          if (rawData && rawData.en && rawData.tr) {
-            const rawString = JSON.stringify({
-              en: rawData.en,
-              tr: rawData.tr,
-            });
-            const mergedString = JSON.stringify({
-              en: dbContent.en,
-              tr: dbContent.tr,
-            });
-
-            if (rawString !== mergedString) {
-              setSchemaUpdateDetected(true);
-              setIsDirty(true);
-            }
-          }
-        } catch (error) {
-          console.error("Schema check failed:", error);
-        }
-      };
-
-      checkSchemaSync();
-    }
-  }, [isAuthenticated, dbContent]);
-
   // Cross-tab synchronization
   useEffect(() => {
     const syncLogoutAcrossTabs = (event) => {
@@ -317,22 +280,22 @@ export default function AdminCMS() {
     {
       id: "home",
       icon: "view_carousel",
-      label: adminLang === "en" ? "Home Page" : "Ana Sayfa",
+      label: content ? content[adminLang].nav.home : "Home Page",
     },
     {
       id: "services",
       icon: "handyman",
-      label: adminLang === "en" ? "Services Page" : "Hizmetler Sayfası",
+      label: content ? content[adminLang].nav.services : "Services Page",
     },
     {
       id: "company",
       icon: "corporate_fare",
-      label: adminLang === "en" ? "Company Page" : "Şirket Sayfası",
+      label: content ? content[adminLang].nav.company : "Company Page",
     },
     {
       id: "contact",
       icon: "call",
-      label: adminLang === "en" ? "Contact Page" : "İletişim Sayfası",
+      label: content ? content[adminLang].nav.contact : "Contact Page",
     },
   ];
 
@@ -363,7 +326,6 @@ export default function AdminCMS() {
     localStorage.removeItem("adminToken");
     setIsAuthenticated(false);
     setPasswordInput("");
-    hasCheckedSchema.current = false;
   };
 
   const handleTextChange = (lang, section, key, value) => {
@@ -600,7 +562,6 @@ export default function AdminCMS() {
 
       setGlobalContent(updatedData);
       setIsDirty(false);
-      setSchemaUpdateDetected(false);
 
       alert(
         adminLang === "en"
@@ -1099,25 +1060,6 @@ export default function AdminCMS() {
             </button>
           </div>
         </header>
-
-        {/*SCHEMA UPDATE NOTIFICATION */}
-        {schemaUpdateDetected && (
-          <div className="max-w-[1440px] mx-auto w-full mb-8 animate-fade-in-up">
-            <div className="bg-[#0052b9]/10 border border-[#0052b9]/30 rounded-xl p-4 flex items-start gap-4 shadow-sm">
-              <span className="material-symbols-outlined text-[#0052b9] text-[24px]">
-                info
-              </span>
-              <div>
-                <h4 className="text-[#0052b9] font-[700] text-[16px] mb-1">
-                  {ui.schemaNoticeTitle}
-                </h4>
-                <p className="text-[#0052b9]/80 text-[14px] font-[500]">
-                  {ui.schemaNoticeDesc}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* MAIN LAYOUT GRID */}
         <div className="max-w-[1440px] mx-auto w-full grid grid-cols-12 gap-8 pb-12">

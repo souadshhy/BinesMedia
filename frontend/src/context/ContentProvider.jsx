@@ -66,9 +66,6 @@ export function ContentProvider({ children }) {
   useEffect(() => {
     fetchDbContent(); // Fetch on initial load
 
-    // Auto-refresh the live site the moment you click back to its tab
-    window.addEventListener("focus", fetchDbContent);
-    return () => window.removeEventListener("focus", fetchDbContent);
   }, [fetchDbContent]);
 
   return (
