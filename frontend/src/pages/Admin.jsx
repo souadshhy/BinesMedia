@@ -281,15 +281,16 @@ export default function AdminCMS() {
       label: content ? content[adminLang].nav.home : "Home Page",
     },
     {
-      id: "services",
-      icon: "handyman",
-      label: content ? content[adminLang].nav.services : "Services Page",
-    },
-    {
       id: "company",
       icon: "corporate_fare",
-      label: content ? content[adminLang].nav.company : "Company Page",
+      label: content ? content[adminLang].nav.company : "About Us Page",
     },
+    {
+      id: "services",
+      icon: "handyman",
+      label: content ? content[adminLang].nav.services : "Our Services Page",
+    },
+
     {
       id: "contact",
       icon: "call",
