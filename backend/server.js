@@ -17,12 +17,29 @@ cloudinary.config({
 
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
 app.use(express.json({ limit: "50mb" }));
 
 // Configure Multer (Stores image in RAM temporarily before sending to Cloudinary)
 const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+
+// Mongoose Schemas
+const contentSchema = new mongoose.Schema({
+  data: { type: mongoose.Schema.Types.Mixed, required: true },
+});
+const Content = mongoose.model("Content", contentSchema);
+
+const adminSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+});
+const Admin = mongoose.model("Admin", adminSchema);
 
 // Connect to MongoDB
 mongoose
@@ -43,17 +60,6 @@ mongoose
     console.log("Admin credentials synced with .env");
   })
   .catch((err) => console.error("MongoDB connection error:", err));
-// Mongoose Schemas
-const contentSchema = new mongoose.Schema({
-  data: { type: mongoose.Schema.Types.Mixed, required: true },
-});
-const Content = mongoose.model("Content", contentSchema);
-
-const adminSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-});
-const Admin = mongoose.model("Admin", adminSchema);
 
 // JWT Verification Middleware
 const verifyToken = (req, res, next) => {

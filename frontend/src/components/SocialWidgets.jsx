@@ -5,7 +5,7 @@ import { useSiteContent } from "../context/ContentProvider";
 export default function SocialWidgets() {
   
   const { content } = useSiteContent();
-  if (!content)return alert("Couldn't find social links.");
+  if (!content) return null;
 
   const t = content.en.contact;
 

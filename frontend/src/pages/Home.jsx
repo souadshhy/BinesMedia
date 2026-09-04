@@ -30,11 +30,11 @@ export default function Home() {
       threshold: 0.1,
     };
 
-    const observer = new IntersectionObserver((entries, observer) => {
+    const observer = new IntersectionObserver((entries, obs) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
+          obs.unobserve(entry.target);
         }
       });
     }, observerOptions);
@@ -46,13 +46,13 @@ export default function Home() {
       document
         .querySelectorAll(".animate-fade-in-up:not(.observer-target)")
         .forEach((el) => el.classList.add("is-visible"));
-    }, 50);
+    }, 100);
 
     return () => {
       clearTimeout(timer);
       observer.disconnect();
     };
-  }, [content, isLoading]);
+  }, [content, isLoading, language]);
 
   const handleScrollTop = () => {
     setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 10);
@@ -70,7 +70,6 @@ export default function Home() {
 
   const allFeatures = t.features || [];
 
-  
   const imgFeatures = allFeatures.slice(0, 2).filter((f) => !f.isHidden);
   const cardFeatures = allFeatures.slice(2).filter((f) => !f.isHidden);
 
@@ -143,7 +142,6 @@ export default function Home() {
 
           <div className="flex flex-col gap-32 relative z-10">
             {imgFeatures.map((feature, idx) => {
-              
               const originalIndex = allFeatures.indexOf(feature);
               const isEven = originalIndex % 2 === 0;
 
@@ -175,7 +173,7 @@ export default function Home() {
                   >
                     <div className="absolute inset-0 bg-primary/20 mix-blend-overlay z-10 pointer-events-none"></div>
                     <div
-                      className="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105 bg-surface-container"
+                      className="w-auto h-full bg-cover bg-[center_30%] transition-transform duration-700 group-hover:scale-105 bg-surface-container"
                       style={
                         feature.img
                           ? { backgroundImage: `url('${feature.img}')` }

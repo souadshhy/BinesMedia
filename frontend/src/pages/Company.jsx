@@ -5,37 +5,41 @@ import { useSiteContent } from "../context/ContentProvider";
 export default function Company() {
   const { language } = useLanguage();
   const { content, isLoading } = useSiteContent();
-  if (isLoading) return <div className="min-h-screen bg-black" />;
   const t = content[language].company;
 
   useEffect(() => {
+    if (isLoading || !content) return;
+
     const observerOptions = {
       root: null,
       rootMargin: "0px -10%",
       threshold: 0.1,
     };
 
-    const observer = new IntersectionObserver((entries, observer) => {
+    const observer = new IntersectionObserver((entries, obs) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
+          obs.unobserve(entry.target);
         }
       });
     }, observerOptions);
 
-    document.querySelectorAll(".observer-target").forEach((element) => {
-      observer.observe(element);
-    });
-
-    setTimeout(() => {
+    const timer = setTimeout(() => {
+      document.querySelectorAll(".observer-target").forEach((element) => {
+        observer.observe(element);
+      });
       document
-        .querySelectorAll(".animate-fade-in-up")
+        .querySelectorAll(".animate-fade-in-up:not(.observer-target)")
         .forEach((el) => el.classList.add("is-visible"));
     }, 100);
 
-    return () => observer.disconnect();
-  }, [t]); 
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [t, content, isLoading, language]);
+  if (isLoading) return <div className="min-h-screen bg-black" />;
 
   const visibleProjects = t.projects?.filter((p) => !p.isHidden) || [];
 

@@ -209,19 +209,33 @@ export default function AdminCMS() {
   const [authError, setAuthError] = useState(false);
 
   const { content: dbContent, setContent: setGlobalContent } = useSiteContent();
+
   const [content, setContent] = useState(dbContent);
   const [activeSection, setActiveSection] = useState("home");
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
 
-  // NEW: State for detecting schema changes
   const [schemaUpdateDetected, setSchemaUpdateDetected] = useState(false);
   const hasCheckedSchema = useRef(false);
 
   useEffect(() => {
-    if (dbContent && !isDirty) setContent(dbContent);
+    if (dbContent && !isDirty) {
+      setContent(dbContent);
+    }
   }, [dbContent, isDirty]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
 
   // JWT Backend Verification
   useEffect(() => {
@@ -249,10 +263,9 @@ export default function AdminCMS() {
     verifyToken();
   }, []);
 
-  // NEW: Check if raw DB data differs from merged context data (Schema Evolution Check)
   useEffect(() => {
     if (isAuthenticated && dbContent && !hasCheckedSchema.current) {
-      hasCheckedSchema.current = true; // Ensure we only check once per session
+      hasCheckedSchema.current = true;
 
       const checkSchemaSync = async () => {
         try {
@@ -261,7 +274,6 @@ export default function AdminCMS() {
           const rawData = await res.json();
 
           if (rawData && rawData.en && rawData.tr) {
-            // Compare cleanly by stripping out any DB metadata (like _id)
             const rawString = JSON.stringify({
               en: rawData.en,
               tr: rawData.tr,
@@ -273,7 +285,7 @@ export default function AdminCMS() {
 
             if (rawString !== mergedString) {
               setSchemaUpdateDetected(true);
-              setIsDirty(true); // Pre-flag as dirty so the Save button is active immediately
+              setIsDirty(true);
             }
           }
         } catch (error) {
@@ -351,7 +363,7 @@ export default function AdminCMS() {
     localStorage.removeItem("adminToken");
     setIsAuthenticated(false);
     setPasswordInput("");
-    hasCheckedSchema.current = false; // Reset schema check on logout
+    hasCheckedSchema.current = false;
   };
 
   const handleTextChange = (lang, section, key, value) => {
@@ -439,6 +451,47 @@ export default function AdminCMS() {
     }));
   };
 
+  const handleArrayToggleHide = (section, arrayKey, index) => {
+    const currentArray = content.en[section][arrayKey];
+    const isCurrentlyHidden = currentArray[index].isHidden;
+    const visibleCount = currentArray.filter((item) => !item.isHidden).length;
+
+    if (!isCurrentlyHidden && visibleCount <= 1) {
+      alert(
+        adminLang === "en"
+          ? "At least 1 item must remain visible in this section."
+          : "Bu bölümde en az 1 görünür öğe kalmalıdır.",
+      );
+      return;
+    }
+
+    setIsDirty(true);
+    setContent((prev) => {
+      const updateLangArray = (lang) =>
+        prev[lang][section][arrayKey].map((item, i) =>
+          i === index ? { ...item, isHidden: !item.isHidden } : { ...item },
+        );
+
+      return {
+        ...prev,
+        en: {
+          ...prev.en,
+          [section]: {
+            ...prev.en[section],
+            [arrayKey]: updateLangArray("en"),
+          },
+        },
+        tr: {
+          ...prev.tr,
+          [section]: {
+            ...prev.tr[section],
+            [arrayKey]: updateLangArray("tr"),
+          },
+        },
+      };
+    });
+  };
+
   const handleArrayDelete = (section, arrayKey, index) => {
     const currentArray = content.en[section][arrayKey];
     const isVisible = !currentArray[index].isHidden;
@@ -456,58 +509,23 @@ export default function AdminCMS() {
     if (!window.confirm(ui.confirmDelete)) return;
     setIsDirty(true);
 
-    setContent((prev) => {
-      const newEn = [...prev.en[section][arrayKey]];
-      const newTr = [...prev.tr[section][arrayKey]];
-      newEn.splice(index, 1);
-      newTr.splice(index, 1);
-      return {
-        ...prev,
-        en: {
-          ...prev.en,
-          [section]: { ...prev.en[section], [arrayKey]: newEn },
+    setContent((prev) => ({
+      ...prev,
+      en: {
+        ...prev.en,
+        [section]: {
+          ...prev.en[section],
+          [arrayKey]: prev.en[section][arrayKey].filter((_, i) => i !== index),
         },
-        tr: {
-          ...prev.tr,
-          [section]: { ...prev.tr[section], [arrayKey]: newTr },
+      },
+      tr: {
+        ...prev.tr,
+        [section]: {
+          ...prev.tr[section],
+          [arrayKey]: prev.tr[section][arrayKey].filter((_, i) => i !== index),
         },
-      };
-    });
-  };
-
-  const handleArrayToggleHide = (section, arrayKey, index) => {
-    const currentArray = content.en[section][arrayKey];
-    const isCurrentlyHidden = currentArray[index].isHidden;
-    const visibleCount = currentArray.filter((item) => !item.isHidden).length;
-
-    if (!isCurrentlyHidden && visibleCount <= 1) {
-      alert(
-        adminLang === "en"
-          ? "At least 1 item must remain visible in this section."
-          : "Bu bölümde en az 1 görünür öğe kalmalıdır.",
-      );
-      return;
-    }
-
-    setIsDirty(true);
-    setContent((prev) => {
-      const newEn = [...prev.en[section][arrayKey]];
-      const newTr = [...prev.tr[section][arrayKey]];
-      const currentState = newEn[index].isHidden;
-      newEn[index] = { ...newEn[index], isHidden: !currentState };
-      newTr[index] = { ...newTr[index], isHidden: !currentState };
-      return {
-        ...prev,
-        en: {
-          ...prev.en,
-          [section]: { ...prev.en[section], [arrayKey]: newEn },
-        },
-        tr: {
-          ...prev.tr,
-          [section]: { ...prev.tr[section], [arrayKey]: newTr },
-        },
-      };
-    });
+      },
+    }));
   };
 
   const handleImageUpload = async (
@@ -577,14 +595,11 @@ export default function AdminCMS() {
         throw new Error("Network response was not ok");
       }
 
-      // If wrapped in { data: ... }, extract it appropriately based on your API
       const result = await response.json();
       const updatedData = result.data || result;
 
       setGlobalContent(updatedData);
       setIsDirty(false);
-
-      // NEW: Dismiss the notice banner because DB is now fully synced with code
       setSchemaUpdateDetected(false);
 
       alert(
@@ -1147,7 +1162,7 @@ export default function AdminCMS() {
                 {sections.find((s) => s.id === activeSection).label}
               </h3>
             </div>
-            {renderEditorFields()}
+            {content ? renderEditorFields() : <p>Loading fields...</p>}
           </div>
         </div>
       </div>

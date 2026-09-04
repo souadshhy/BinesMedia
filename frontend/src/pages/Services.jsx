@@ -6,11 +6,11 @@ import { useSiteContent } from "../context/ContentProvider";
 export default function Services() {
   const { language } = useLanguage();
   const { content, isLoading } = useSiteContent();
-
+  const t = content[language].services;
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const visibleCaps = t.caps?.filter((cap) => !cap.isHidden) || [];
 
-  // 1. Re-run intersection observers when content live-updates
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -24,11 +24,11 @@ export default function Services() {
       threshold: 0.1,
     };
 
-    const observer = new IntersectionObserver((entries, observer) => {
+    const observer = new IntersectionObserver((entries, obs) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
+          obs.unobserve(entry.target);
         }
       });
     }, observerOptions);
@@ -38,37 +38,22 @@ export default function Services() {
         observer.observe(element);
       });
       document
-        .querySelectorAll(".animate-fade-in-up")
+        .querySelectorAll(".animate-fade-in-up:not(.observer-target)")
         .forEach((el) => el.classList.add("is-visible"));
-    }, 50);
+    }, 100);
 
     return () => {
       clearTimeout(timer);
       observer.disconnect();
     };
-  }, [content, isLoading]);
+  }, [content, isLoading, language]);
 
-  if (isLoading || !content) {
-    return (
-      <div className="min-h-screen bg-[#191c1e] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-[#0052b9] border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  const t = content[language].services;
-
-  // 2. Filter out hidden items!
-  const visibleCaps = t.caps?.filter((cap) => !cap.isHidden) || [];
-
-  // 3. Safety check: If a slide is deleted while we are looking at it, reset to 0
   useEffect(() => {
     if (currentSlide >= visibleCaps.length) {
       setCurrentSlide(0);
     }
   }, [visibleCaps.length, currentSlide]);
 
-  // Auto-play timer
   useEffect(() => {
     if (isPaused || visibleCaps.length <= 1) return;
 
@@ -97,9 +82,17 @@ export default function Services() {
     }, 10);
   };
 
+  if (isLoading || !content) {
+    return (
+      <div className="min-h-screen bg-[#191c1e] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-[#0052b9] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <main className="flex-grow pt-20">
-      <section className="bg-inverse-surface py-20 md:py-28 relative overflow-hidden border-b border-primary/30 z-0 animate-fade-in-up">
+      <section className="bg-inverse-surface py-32 md:py-48 relative overflow-hidden border-b border-primary/30 z-0 animate-fade-in-up">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#0052b9_1px,transparent_1px)] [background-size:40px_40px] z-0"></div>
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
@@ -133,7 +126,7 @@ export default function Services() {
                   >
                     <div className="md:w-1/2 h-64 md:h-[500px] relative overflow-hidden">
                       <div
-                        className="absolute inset-0 bg-cover object-[center_15%] w-full h-full transition-transform duration-1000 scale-105 group-hover:scale-100 bg-surface-variant"
+                        className="absolute inset-0 bg-cover bg-[center_40%] w-full h-full transition-transform duration-1000 scale-105 group-hover:scale-100 bg-surface-variant"
                         style={
                           cap.img
                             ? { backgroundImage: `url('${cap.img}')` }

@@ -173,6 +173,8 @@ export default function ContactForm() {
                 name="botcheck"
                 className="hidden"
                 style={{ display: "none" }}
+                tabIndex={-1}
+                autoComplete="off"
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
