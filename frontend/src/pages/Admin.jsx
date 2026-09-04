@@ -147,16 +147,15 @@ const schema = {
 
 const adminUI = {
   en: {
-    title: "Content Editor",
+    title: "Content Management",
     desc: "Manage live website sections, translations, and media.",
     save: "Save to Database",
     saving: "Saving...",
     sections: "Website Pages",
     editing: "Editing:",
-    loginTitle: "Admin Portal",
-    loginDesc:
-      "Enter your security key to access the content management system.",
-    authBtn: "Authenticate",
+    loginTitle: "Admin Panel",
+    loginDesc: "Enter your password to access the content management system.",
+    authBtn: "Sign in",
     authErr: "Incorrect password. Access denied.",
     langEN: "English Content",
     langTR: "Turkish Content",
@@ -172,15 +171,14 @@ const adminUI = {
       "New fields or structures were found in the local code that aren't in your database yet. They have been loaded automatically. Please review the content and click 'Save to Database' to push these changes live.",
   },
   tr: {
-    title: "İçerik Yöneticisi",
+    title: "İçerik Yönetimi",
     desc: "Canlı web sitesi bölümlerini, çevirileri ve medyayı yönetin.",
     save: "Veritabanına Kaydet",
     saving: "Kaydediliyor...",
     sections: "Web Sayfaları",
     editing: "Düzenlenen:",
-    loginTitle: "Yönetici Portalı",
-    loginDesc:
-      "İçerik yönetim sistemine erişmek için güvenlik anahtarınızı girin.",
+    loginTitle: "Yönetici Paneli",
+    loginDesc: "İçerik yönetim sistemine erişmek için şifre girin.",
     authBtn: "Giriş Yap",
     authErr: "Hatalı şifre. Erişim reddedildi.",
     langEN: "İngilizce İçerik",
@@ -191,7 +189,7 @@ const adminUI = {
     pwdPlaceholder: "Şifre",
     addItem: "Yeni Öğe Ekle",
     confirmDelete: "Bu öğeyi kalıcı olarak silmek istediğinize emin misiniz?",
-    logout: "Çıkış",
+    logout: "Çıkış Yap",
     schemaNoticeTitle: "Kod Güncellemesi Algılandı",
     schemaNoticeDesc:
       "Yerel kodda henüz veritabanınızda olmayan yeni alanlar veya yapılar bulundu ve otomatik olarak yüklendi. Lütfen içeriği inceleyin ve bu değişiklikleri canlıya almak için 'Veritabanına Kaydet'e tıklayın.",
@@ -275,7 +273,7 @@ export default function AdminCMS() {
     {
       id: "nav",
       icon: "menu",
-      label: adminLang === "en" ? "Navigation Bar" : "Navigasyon",
+      label: adminLang === "en" ? "Menu" : "Menü",
     },
     {
       id: "home",
