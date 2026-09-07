@@ -61,6 +61,7 @@ const schema = {
       { key: "heroTitle1", label: "Title Part 1", type: "text" },
       { key: "heroTitle2", label: "Title Part 2", type: "text" },
       { key: "heroDesc", label: "Description", type: "textarea" },
+      { key: "heroImg", label: "Hero Background Image", type: "image" },
     ],
     "Service Offerings": [
       {
@@ -149,7 +150,7 @@ const adminUI = {
   en: {
     title: "Content Management",
     desc: "Manage live website sections, translations, and media.",
-    save: "Save to Database",
+    save: "Save",
     saving: "Saving...",
     sections: "Website Pages",
     editing: "Editing:",
@@ -173,7 +174,7 @@ const adminUI = {
   tr: {
     title: "İçerik Yönetimi",
     desc: "Canlı web sitesi bölümlerini, çevirileri ve medyayı yönetin.",
-    save: "Veritabanına Kaydet",
+    save: "Kaydet",
     saving: "Kaydediliyor...",
     sections: "Web Sayfaları",
     editing: "Düzenlenen:",
@@ -569,11 +570,7 @@ export default function AdminCMS() {
       );
     } catch (error) {
       console.error("Error saving to database:", error);
-      alert(
-        adminLang === "en"
-          ? "Failed to save to database."
-          : "Veritabanına kaydedilemedi.",
-      );
+      alert(adminLang === "en" ? "Failed to save." : "Kaydedilemedi.");
     } finally {
       setIsSaving(false);
     }

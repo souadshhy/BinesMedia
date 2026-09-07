@@ -92,16 +92,31 @@ export default function Services() {
 
   return (
     <main className="flex-grow pt-20">
-      <section className="bg-inverse-surface py-32 md:py-48 relative overflow-hidden border-b border-primary/30 z-0 animate-fade-in-up">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#0052b9_1px,transparent_1px)] [background-size:40px_40px] z-0"></div>
+      <section className="relative py-32 md:py-48 overflow-hidden border-b border-primary/30 z-0 animate-fade-in-up bg-black">
+        {/* Background Image & Shadow Overlay */}
+        {t.heroImg && (
+          <div className="absolute inset-0 z-0">
+            <img
+              src={t.heroImg}
+              alt="Services Hero Background"
+              className="w-full h-full object-cover opacity-70"
+            />
+            {/* Heavy gradient shadow overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/90"></div>
+          </div>
+        )}
+
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#0052b9_1px,transparent_1px)] [background-size:40px_40px] z-0 pointer-events-none"></div>
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
         <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop relative z-10 text-center animate-fade-in-up">
-          <h1 className="font-display-lg-mobile md:text-display-lg font-black text-white leading-tight uppercase tracking-tighter">
+          <h1 className="font-display-lg-mobile md:text-display-lg font-black text-white leading-tight uppercase tracking-tighter drop-shadow-lg">
             {t.heroTitle1}{" "}
-            <span className="text-primary-fixed-dim">{t.heroTitle2}</span>
+            <span className="text-primary-fixed-dim drop-shadow-md">
+              {t.heroTitle2}
+            </span>
           </h1>
-          <p className="font-body-lg text-surface-dim/80 max-w-2xl mx-auto mt-6">
+          <p className="font-body-lg text-gray-300 max-w-2xl mx-auto mt-6 drop-shadow-md">
             {t.heroDesc}
           </p>
         </div>

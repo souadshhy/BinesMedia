@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteContent } from "../context/ContentProvider";
@@ -8,6 +8,33 @@ export default function Home() {
   const { language } = useLanguage();
   const { content, isLoading } = useSiteContent();
 
+  // State to track our scroll progress (0 to 1) for the hero section
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  // Scroll listener for the door effect
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+
+      // Calculate how far we've scrolled relative to one screen height
+      let progress = scrollY / windowHeight;
+
+      // Clamp the value between 0 and 1
+      if (progress > 1) progress = 1;
+      if (progress < 0) progress = 0;
+
+      setScrollProgress(progress);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    // Run once on mount to set initial state
+    handleScroll();
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Standard observer for the rest of the page animations
   useEffect(() => {
     if (location.hash === "#map") {
       const mapElement = document.getElementById("map");
@@ -67,60 +94,153 @@ export default function Home() {
   }
 
   const t = content[language].home;
-
   const allFeatures = t.features || [];
-
   const imgFeatures = allFeatures.slice(0, 2).filter((f) => !f.isHidden);
   const cardFeatures = allFeatures.slice(2).filter((f) => !f.isHidden);
-
   const visibleGuarantees = t.guarantees?.filter((g) => !g.isHidden) || [];
+
+  // Doors finish opening slightly earlier in the scroll (at 70% of the first window height)
+  const doorProgress = Math.min(scrollProgress / 0.7, 1);
+
+  // Monitor starts appearing a bit later and finishes exactly when the scroll hits 100% of the first screen
+  const monitorProgress = Math.max(
+    0,
+    Math.min((scrollProgress - 0.2) / 0.8, 1),
+  );
 
   return (
     <main>
-      <section className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-black">
-        <div className="absolute inset-0 z-0 animate-enter-elevator">
-          <img
-            src={t.heroImg}
-            alt="Elevator interior"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/30"></div>
-        </div>
-        <div className="relative z-10 w-full max-w-2xl px-6 flex flex-col items-center justify-center animate-ui-fade-in mt-24">
-          <div className="w-full rounded-xl border border-white/20 bg-black/40 backdrop-blur-xl p-8 md:p-12 text-center shadow-[0_0_40px_rgba(6,105,232,0.15)]">
-            <div className="flex flex-col gap-6 items-center">
-              <h1 className="font-display-lg-mobile text-display-lg-mobile md:text-headline-xl text-white leading-tight font-bold animate-fade-in-up delay-100 is-visible">
-                {t.heroTitle1}
-                <br />
-                <span className="text-primary-fixed-dim">{t.heroTitle2}</span>
-              </h1>
-              <p className="text-body-md text-gray-300 max-w-xl mx-auto animate-fade-in-up delay-200 is-visible">
-                {t.heroDesc}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-8 mt-6 justify-center w-full animate-fade-in-up delay-300 is-visible">
-                <Link
-                  to="/contact"
-                  onClick={handleScrollTop}
-                  className="text-white/70 hover:text-white px-4 py-2 font-label-md text-label-md transition-colors duration-300 flex items-center justify-center gap-2 group hover-underline-animation"
-                >
-                  {t.btnStart}
-                  <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
-                    arrow_forward
+      <style>
+        {`
+          /* INDUSTRIAL METAL TEXTURE - LEFT DOOR */
+          .bg-metal-left {
+            background-color: #12141a;
+            background-image: 
+              linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(15,22,35,0.7) 40%, rgba(60,95,145,0.4) 85%, rgba(180,210,255,0.2) 96%, rgba(0,0,0,0.95) 100%),
+              repeating-linear-gradient(to right, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 4px, rgba(0,0,0,0.06) 4px, rgba(0,0,0,0.06) 5px, transparent 5px, transparent 13px);
+          }
+
+          /* INDUSTRIAL METAL TEXTURE - RIGHT DOOR */
+          .bg-metal-right {
+            background-color: #12141a;
+            background-image: 
+              linear-gradient(to right, rgba(0,0,0,0.95) 0%, rgba(180,210,255,0.2) 4%, rgba(60,95,145,0.4) 15%, rgba(15,22,35,0.7) 60%, rgba(0,0,0,0.85) 100%),
+              repeating-linear-gradient(to right, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 4px, rgba(0,0,0,0.06) 4px, rgba(0,0,0,0.06) 5px, transparent 5px, transparent 13px);
+          }
+
+          /* Smoky Gray Glow Engraving */
+          .text-neon {
+            color: #0d1522; /* Lightened the dark blue fill slightly so it reads better */
+            text-shadow: 
+              0 0 3px rgba(255, 255, 255, 0.5), /* Sharp, thin white rim */
+              0 0 10px rgba(200, 200, 200, 0.5), /* Bright grayish inner glow */
+              0 0 25px rgba(150, 160, 170, 0.4), /* Smoky gray ambient backlight */
+              -5px -5px 15px rgba(0, 0, 0, 0.8); /* Retained depth shadow so it still looks embedded in the metal */
+          }
+        `}
+      </style>
+
+      {/* HERO SECTION SCROLL WRAPPER */}
+      <section className="relative h-[350vh] w-full bg-black">
+        {/* STICKY CONTAINER */}
+        <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden [perspective:1000px]">
+          {/* ELEVATOR DOORS OVERLAY */}
+          <div className="absolute inset-0 z-50 flex pointer-events-none overflow-hidden">
+            {/* Left Door */}
+            <div
+              className="w-1/2 h-full bg-metal-left border-r-[2px] border-[#0a0f16] shadow-[inset_-40px_0_80px_rgba(0,0,0,0.7),_inset_0_0_20px_rgba(0,0,0,0.8)] flex justify-end items-center relative"
+              style={{
+                transform: `translateX(-${doorProgress * 100}%)`,
+                willChange: "transform",
+              }}
+            >
+              <h2 className="text-[11vw] sm:text-6xl md:text-8xl lg:text-[120px] font-black uppercase tracking-tighter text-neon pr-2 sm:pr-4 md:pr-8 select-none z-10">
+                Bines
+              </h2>
+              {/* Inner gap shadow */}
+              <div className="absolute right-0 top-0 w-8 h-full bg-gradient-to-l from-black/80 to-transparent z-20"></div>
+            </div>
+
+            {/* Right Door */}
+            <div
+              className="w-1/2 h-full bg-metal-right border-l-[2px] border-[#0a0f16] shadow-[inset_40px_0_80px_rgba(0,0,0,0.7),_inset_0_0_20px_rgba(0,0,0,0.8)] flex justify-start items-center relative"
+              style={{
+                transform: `translateX(${doorProgress * 100}%)`,
+                willChange: "transform",
+              }}
+            >
+              <h2 className="text-[11vw] sm:text-6xl md:text-8xl lg:text-[120px] font-black uppercase tracking-tighter text-neon pl-2 sm:pl-4 md:pl-8 select-none z-10">
+                Media
+              </h2>
+              {/* Inner gap shadow */}
+              <div className="absolute left-0 top-0 w-8 h-full bg-gradient-to-r from-black/80 to-transparent z-20"></div>
+            </div>
+          </div>
+
+          {/* BACKGROUND IMAGE - Zooms slightly as you scroll */}
+          <div
+            className="absolute inset-0 z-0"
+            style={{
+              transform: `scale(${1 + scrollProgress * 0.1})`,
+              willChange: "transform",
+            }}
+          >
+            <img
+              src={t.heroImg}
+              alt="Elevator interior"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/40"></div>
+          </div>
+
+          {/* 3D MONITOR CARD - Revealed entirely by scroll progress */}
+          <div
+            className="relative z-10 w-full max-w-2xl px-6 flex flex-col items-center justify-center mt-24 [transform-style:preserve-3d]"
+            style={{
+              opacity: monitorProgress,
+              transform: `scale(${0.85 + monitorProgress * 0.15}) translateZ(${-150 + monitorProgress * 150}px)`,
+              filter: `blur(${10 - monitorProgress * 10}px)`,
+              willChange: "transform, opacity, filter",
+            }}
+          >
+            <div className="w-full rounded-xl border border-white/20 bg-black/40 backdrop-blur-xl p-8 md:p-12 text-center shadow-[0_0_60px_rgba(6,105,232,0.25)] transition-transform duration-700 ease-out hover:scale-[1.02] [transform-style:preserve-3d]">
+              <div className="flex flex-col gap-6 items-center [transform:translateZ(60px)]">
+                <h1 className="font-display-lg-mobile text-display-lg-mobile md:text-headline-xl text-white leading-tight font-bold drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                  {t.heroTitle1}
+                  <br />
+                  <span className="text-primary-fixed-dim drop-shadow-[0_0_15px_rgba(6,105,232,0.6)]">
+                    {t.heroTitle2}
                   </span>
-                </Link>
-                <Link
-                  to="/services"
-                  onClick={handleScrollTop}
-                  className="text-white/70 hover:text-white px-4 py-2 font-label-md text-label-md transition-colors duration-300 flex items-center justify-center hover-underline-animation"
-                >
-                  {t.btnExplore}
-                </Link>
+                </h1>
+                <p className="text-body-md text-gray-200 max-w-xl mx-auto drop-shadow-md">
+                  {t.heroDesc}
+                </p>
+                <div className="flex flex-col sm:flex-row gap-8 mt-6 justify-center w-full">
+                  <Link
+                    to="/contact"
+                    onClick={handleScrollTop}
+                    className="text-white/70 hover:text-white px-4 py-2 font-label-md text-label-md transition-colors duration-300 flex items-center justify-center gap-2 group hover-underline-animation"
+                  >
+                    {t.btnStart}
+                    <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
+                      arrow_forward
+                    </span>
+                  </Link>
+                  <Link
+                    to="/services"
+                    onClick={handleScrollTop}
+                    className="text-white/70 hover:text-white px-4 py-2 font-label-md text-label-md transition-colors duration-300 flex items-center justify-center hover-underline-animation"
+                  >
+                    {t.btnExplore}
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
+      {/* The rest of the sections remain completely unchanged below */}
       <section className="relative w-full overflow-hidden py-24 md:py-32 z-0">
         <div className="absolute top-10 -left-20 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[100px] pointer-events-none z-0"></div>
         <div className="absolute top-[40%] -right-20 w-[500px] h-[500px] bg-tertiary-container/20 rounded-full blur-[100px] pointer-events-none z-0"></div>
